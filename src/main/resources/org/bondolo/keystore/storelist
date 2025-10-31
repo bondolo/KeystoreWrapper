@@ -1,0 +1,75 @@
+#! /bin/bash -eu
+# Assumes bash 3.2 and later
+
+# List the contents of a key or trust store
+
+binDir="$(dirname "${0}")"
+
+# define util functions
+# shellcheck source=./utils
+source "${binDir}/utils"
+
+packageHome="${packageHome:-/usr/share/java/bondolo.keystore/}"
+defines=""
+
+
+usage() {
+        echo "# ${0} - List the contents of a key or trust store"
+        echo "# ${0} - [-?|-help] [-D<name>[=<value>] ...] <keyspath|trustpath>"
+        echo "# "
+        echo "# Options"
+        echo "#   [-help | -?]              This help message"
+        echo "#   [-D<name>[=<value>]]      Define a Java system property passed to JVM"
+        echo "# "
+        echo "# Arguments"
+        echo "#    <keyspath>   File path of keys store for keys storage"
+        echo "#    <trustpath>  File path of trust store for certificate storage"
+        echo "# "
+        echo "# Output"
+        echo "#    One line is generated for each alias found in the store file."
+        echo "#    The lines begin with  a descriptor of the type of entry found"
+        echo "#    for the alias. Either the string 'CERIFICATE' if the store"
+        echo "#    contains a certificate, 'KEYPAIR' if the store contains both"
+        echo "#    certificate and private key, 'KEYONLY' if the store contains"
+        echo "#    a private key with no certificate and 'BOGUS'. If the alias"
+        echo "#    does not match the required pattern, hex encoded SHA256 hash"
+        echo "#    of public key, then it will be followed by '(*)'. Finally,"
+        echo "#    the alias is provided. Example:"
+        echo "#    CERTIFICATE     59b92b967ce6f02632176efcc46eda26030e6684defb14cc4042cba3ed857c89"
+        echo "#    KEYPAIR         0deab283fd9e47083de3cea342fac3552e71dfc83d463403e5ef26a137594625"
+        echo "#    KEYPAIR     (*) myKey"
+        echo "# "
+        echo "# Environment Variables"
+        echo "#   HOME                 Home directory"
+        echo "# "
+        echo "# "
+}
+
+for i in "${@:-}"; do
+    case "${i}" in
+        -\?|-help)
+            usage
+            exit 0
+            ;;
+        -D*) defines="${defines:-} ${i}"; shift;;
+        --) shift; break;;
+        *) break;;
+    esac
+done
+
+# Make sure there is one argument
+if [ "${#}" != "1" ]; then
+  fatal 1 "Expected one argument: <keyspath|trustpath>"
+fi
+
+# Set up default java options
+options="-Xms32m -Xmx48m -Djava.security.egd=file:/dev/./urandom"
+
+# Add in user defines
+options="${options} ${defines}"
+
+CLASSPATH=$(classpath "${packageHome}/libs")
+
+# shellcheck disable=SC2116,SC2086
+java ${JAVA_OPTS:-} ${options} -classpath "${CLASSPATH}" org.bondolo.keystore.libexec.StoreList "${@}"
+

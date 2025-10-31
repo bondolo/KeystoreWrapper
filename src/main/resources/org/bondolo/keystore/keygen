@@ -1,0 +1,71 @@
+#! /bin/bash -eux
+# Assumes bash 3.2 and later
+
+# generate key pair
+
+binDir="$(dirname "${0}")"
+
+# define util functions
+# shellcheck source=./utils
+source "${binDir}/utils"
+
+packageHome="${packageHome:-/usr/share/java/bondolo.keystore/}"
+defines=""
+
+
+usage() {
+        echo "# ${0} - generate key pair "
+        echo "# ${0} - [-?|-help] [-D<name>[=<value>] ...] <x500dn> <keyspath> <pempath>"
+        echo "# "
+        echo "# Options"
+        echo "#   [-help | -?]              This help message"
+        echo "#   [-D<name>[=<value>]]      Define a Java system property passed to JVM"
+        echo "# "
+        echo "# Arguments"
+        echo "#    <x500dn>      X500 Distinguised name for certificate."
+        echo "#       ex. 'UID=44352, CN=myKey, EMAILADDRESS=support@example.com, ST=California, L=Pasadena, O=Example Corporation, C=US'"
+        echo "#    <keyspath>    File path of key store for private key and certificate storage"
+        echo "#    <pempath>     File path for certificate of generated public key"
+        echo "# "
+        echo "# Environment Variables"
+        echo "#   HOME                 Home directory"
+        echo "# "
+        echo "# "
+}
+
+for i in "${@:-}"; do
+    case "${i}" in
+        -\?|-help)
+            usage
+            exit 0
+            ;;
+        -D*) defines="${defines:-} ${i}"; shift;;
+        --) shift; break;;
+        *) break;;
+    esac
+done
+
+# Make sure there are three arguments
+if [ "${#}" != "3" ]; then
+  fatal 1 "Expected three arguments: <x500dn> <keyspath> <pempath>"
+fi
+
+# Set up default java options
+options="-Xms32m -Xmx48m -Djava.security.egd=file:/dev/./urandom"
+
+# Add in user defines
+options="${options} ${defines}"
+
+# Set up logging
+if [ -d /mnt/XDATA/data ]; then
+    logDir="/mnt/XDATA/data/regulus/var/log"
+else
+    logDir="${packageHome}/log"
+fi
+mkdir -p "${logDir}" || fatal $? "Failed to create log directory"
+
+CLASSPATH=$(classpath "${packageHome}/libs")
+
+# shellcheck disable=SC2116,SC2086
+java ${JAVA_OPTS:-} ${options} -classpath "${CLASSPATH}" org.bondolo.keystore.libexec.KeyGen "${@}"
+

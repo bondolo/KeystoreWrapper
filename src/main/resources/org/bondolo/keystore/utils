@@ -1,0 +1,40 @@
+#! /bin/bash -eu
+
+# Shared functions for scripts
+
+if [ "${TERM:-unknown}" = "unknown" ]; then
+    TERM="dumb"
+fi
+export TERM
+
+
+# args are message to be printed
+inform() {
+    echo -e "# ${0}: $(date -u +'%Y%m%dT%H%M%SZ') :$(tput bold) ${*}$(tput sgr0)"
+}
+
+# args are message to be printed
+warn() {
+    echo -e "# ${0}: $(date -u +'%Y%m%dT%H%M%SZ') :$(tput bold)$(tput setaf 1) ${*}$(tput sgr0)"
+}
+
+# arg 1 is exit code
+# args are message to be printed
+fatal() {
+    exitCode="${1:-1}"
+    shift
+    echo -e "$(tput setaf 1)# $(tput bold)${0}$(tput sgr0)$(tput setaf 1): ${*:-Fatal Error}$(tput sgr0)" >&2
+    exit "${exitCode}"
+}
+
+
+# args are directories. if no args current directory is used
+# result is a classpath of discovered jars
+classpath() {
+    declare -a jars
+    while IFS= read -r -d $'\0' jar; do
+      jars+=("${jar}")
+    done < <(find "${@:-.}" -type f -name '*.jar' -print0)
+    IFS=: # dirty trick, use ":" as separator printing array
+    echo -n "${jars[*]}"
+}
