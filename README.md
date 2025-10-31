@@ -14,3 +14,7 @@ Several command line utilities are provided
 - `certimport` - imports certificates in to a key or trust store
 - `keygen` - generate a key and certificate and store to a key store
 - `storelist` - list the certificates and keys in a key or trust store
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
