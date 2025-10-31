@@ -34,6 +34,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PEMEncoder;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -385,16 +386,8 @@ public class KeyStoreContainer implements Destroyable {
         X509Certificate cert = getCertificate(alias)
                 .orElseThrow(() -> new IllegalArgumentException("No such certificate alias " + alias));
 
-        Base64.Encoder toBase64 = Base64.getMimeEncoder(64, new byte[]{'\n'});
-        try (BufferedWriter pem = new BufferedWriter(new OutputStreamWriter(pemStream, StandardCharsets.US_ASCII))) {
-            pem.write("-----BEGIN CERTIFICATE-----\n");
-            pem.write(toBase64.encodeToString(cert.getEncoded()));
-            pem.write('\n');
-            pem.write("-----END CERTIFICATE-----\n");
-        } catch (CertificateException ex) {
-            logger.log(Level.WARNING, "Security failure exporting certificate", ex);
-            throw new IOException("Security failure exporting certificate", ex);
-        }
+        PEMEncoder encoder = PEMEncoder.of();
+        pemStream.write(encoder.encode(cert));
     }
 
     /**

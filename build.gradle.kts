@@ -24,6 +24,7 @@ dependencies {
     implementation("org.jspecify:jspecify:1.0.0")
     implementation("org.bouncycastle:bcprov-jdk18on:1.82")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.82")
+
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.junit.jupiter:junit-jupiter-params")
@@ -35,6 +36,10 @@ java {
     targetCompatibility = JavaVersion.VERSION_25
 }
 
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("--enable-preview")
+}
+
 pitest {
     pitestVersion.set("1.20.7")
     junit5PluginVersion.set("1.2.3")
@@ -44,6 +49,7 @@ pitest {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    jvmArgs = listOf("--enable-preview")
     testLogging {
         events("failed")
     }
@@ -84,6 +90,10 @@ tasks.register<JavaExec>("storelist") {
     description = "Lists the contents of a keystore"
     mainClass.set("org.bondolo.keystore.libexec.StoreList")
     classpath = sourceSets.main.get().runtimeClasspath
+}
+
+tasks.withType<JavaExec> {
+    jvmArgs = listOf("--enable-preview")
 }
 
 val generatedSourcesDir = layout.buildDirectory.dir("generated/java")
